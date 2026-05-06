@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agnt — AI Agent Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #f5f4f0;
+  --bg-2:       #eceae3;
+  --bg-glass:   rgba(255,255,255,0.65);
+  --bg-glass-2: rgba(0,0,0,0.04);
+
+  --amber:        #d97706;
+  --amber-bright: #b45309;
+  --amber-dim:    rgba(217,119,6,0.10);
+  --amber-border: rgba(217,119,6,0.22);
+
+  --emerald:        #059669;
+  --emerald-dim:    rgba(5,150,105,0.08);
+  --emerald-border: rgba(5,150,105,0.20);
+
+  --violet:        #7c3aed;
+  --violet-dim:    rgba(124,58,237,0.08);
+  --violet-border: rgba(124,58,237,0.20);
+
+  --sky:        #0284c7;
+  --sky-dim:    rgba(2,132,199,0.08);
+  --sky-border: rgba(2,132,199,0.20);
+
+  --rose:        #e11d48;
+  --rose-dim:    rgba(225,29,72,0.08);
+  --rose-border: rgba(225,29,72,0.20);
+
+  --border:   rgba(0,0,0,0.09);
+  --border-2: rgba(0,0,0,0.16);
+
+  --text:   #1c1917;
+  --text-2: #57534e;
+  --text-3: #a8a29e;
+  --text-4: #d6d3d1;
+
+  --font-ui:      'DM Sans', sans-serif;
+  --font-display: 'Syne', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --r:    12px;
+  --r-sm: 8px;
+  --r-lg: 18px;
+}
+
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; line-height: 1.6; }
+
+/* Dot grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none; z-index: 0;
+}
+
+/* Ambient amber haze */
+body::after {
+  content: '';
+  position: fixed;
+  top: -10%; left: 25%;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(217,119,6,0.07) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+.app {
+  position: relative; z-index: 1;
+  height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+.header {
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(245,244,240,0.92);
+  backdrop-filter: blur(16px);
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 800; font-size: 17px; letter-spacing: -0.02em;
+}
+
+.logo-mark {
+  width: 30px; height: 30px;
+  background: var(--amber);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: #000; font-size: 15px; font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.header-mid {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.status-pip {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--emerald);
+  animation: pip 2.4s ease-in-out infinite;
+}
+
+@keyframes pip {
+  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(52,211,153,0.4); }
+  50%      { opacity:0.5; box-shadow:0 0 0 4px rgba(52,211,153,0); }
+}
+
+.status-label {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+  color: var(--text-3); text-transform: uppercase;
+}
+
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-2); font-family: var(--font-ui); font-size: 12px;
+  padding: 5px 14px; border-radius: var(--r-sm);
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-ghost:hover { border-color: var(--border-2); color: var(--text); background: var(--bg-glass); }
+
+.mode-toggle {
+  display: flex; align-items: center;
+  background: var(--bg-glass); border: 1px solid var(--border);
+  border-radius: 100px; padding: 2px; gap: 1px;
+}
+.mode-btn {
+  background: none; border: none;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+  color: var(--text-3); padding: 4px 12px; border-radius: 100px;
+  cursor: pointer; transition: all 0.15s;
+}
+.mode-btn.active {
+  background: var(--bg-glass-2); color: var(--text);
+}
+.mode-btn.live.active { color: var(--emerald); }
+
+/* ── MAIN ────────────────────────────────────────────────── */
+.main {
+  flex: 1; min-height: 0; overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 390px;
+}
+
+/* ── CHAT PANE ───────────────────────────────────────────── */
+.chat-pane {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  min-height: 0; overflow: hidden;
+}
+
+.messages {
+  flex: 1; overflow-y: auto;
+  padding: 28px 32px;
+  display: flex; flex-direction: column; gap: 22px;
+  scroll-behavior: smooth;
+}
+.messages::-webkit-scrollbar { width: 4px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--text-4); border-radius: 2px; }
+
+/* Welcome */
+.welcome {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; text-align: center; padding: 40px;
+}
+
+.welcome-icon {
+  width: 52px; height: 52px;
+  background: var(--amber-dim); border: 1px solid var(--amber-border);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: var(--amber);
+}
+
+.welcome h2 {
+  font-family: var(--font-display); font-weight: 700; font-size: 22px;
+  letter-spacing: -0.02em; color: var(--text);
+}
+
+.welcome p {
+  color: var(--text-2); font-weight: 300; font-size: 13px;
+  max-width: 300px; line-height: 1.7;
+}
+
+.chips {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 8px; margin-top: 6px;
+}
+
+.chip {
+  padding: 7px 14px; font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-2); cursor: pointer;
+  background: var(--bg-glass);
+  transition: all 0.15s;
+}
+.chip:hover {
+  border-color: var(--amber-border);
+  color: var(--amber);
+  background: var(--amber-dim);
+}
+
+/* Messages */
+.message {
+  display: flex; gap: 12px;
+  animation: msg-in 0.28s cubic-bezier(0.16,1,0.3,1) forwards;
+  opacity: 0; transform: translateY(6px);
+}
+
+@keyframes msg-in { to { opacity:1; transform:translateY(0); } }
+
+.message.user { flex-direction: row-reverse; }
+
+.avatar {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+}
+.message.assistant .avatar { background: var(--amber-dim); border: 1px solid var(--amber-border); color: var(--amber); }
+.message.user      .avatar { background: var(--violet-dim); border: 1px solid var(--violet-border); color: var(--violet); }
+
+.msg-body {
+  max-width: 74%; display: flex; flex-direction: column; gap: 4px;
+}
+.message.user .msg-body { align-items: flex-end; }
+
+.msg-role {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-3);
+}
+
+.msg-content {
+  padding: 13px 17px; border-radius: var(--r);
+  font-size: 14px; font-weight: 300; line-height: 1.7;
+}
+.message.assistant .msg-content {
+  background: var(--bg-glass); border: 1px solid var(--border);
+  color: var(--text); border-bottom-left-radius: 4px;
+}
+.message.user .msg-content {
+  background: var(--amber-dim); border: 1px solid var(--amber-border);
+  color: var(--text); border-bottom-right-radius: 4px;
+}
+
+/* Streaming cursor */
+.cur {
+  display: inline-block; width: 2px; height: 14px;
+  background: var(--amber); margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Typing dots */
+.typing {
+  display: flex; gap: 12px; align-items: center;
+  animation: msg-in 0.2s ease forwards; opacity: 0;
+}
+.typing-dots {
+  display: flex; gap: 4px; padding: 11px 16px;
+  background: var(--bg-glass); border: 1px solid var(--border);
+  border-radius: var(--r); border-bottom-left-radius: 4px;
+}
+.dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--text-3);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.dot:nth-child(2) { animation-delay: 0.15s; }
+.dot:nth-child(3) { animation-delay: 0.30s; }
+@keyframes bounce {
+  0%,60%,100% { transform:translateY(0); opacity:0.4; }
+  30%          { transform:translateY(-4px); opacity:1; }
+}
+
+/* ── INPUT ───────────────────────────────────────────────── */
+.input-area {
+  padding: 14px 32px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(245,244,240,0.88);
+  backdrop-filter: blur(12px);
+}
+
+.input-row {
+  display: flex; gap: 10px; align-items: flex-end;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 10px 10px 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-row:focus-within {
+  border-color: var(--amber-border);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.06);
+}
+
+.input-row textarea {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--font-ui);
+  font-size: 14px; font-weight: 300;
+  resize: none; max-height: 120px; min-height: 22px; line-height: 1.6;
+}
+.input-row textarea::placeholder { color: var(--text-3); }
+
+.send {
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 8px; background: var(--amber); border: none;
+  cursor: pointer; color: #000;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.send:hover:not(:disabled) { background: var(--amber-bright); transform: scale(1.06); }
+.send:disabled { background: var(--text-4); cursor: not-allowed; transform: none; }
+.send svg { width: 15px; height: 15px; }
+
+.input-hint {
+  margin-top: 8px; text-align: center;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-3); letter-spacing: 0.06em;
+}
+
+/* ── AGENT PANE ──────────────────────────────────────────── */
+.agent-pane {
+  display: flex; flex-direction: column;
+  min-height: 0; overflow: hidden;
+  background: rgba(0,0,0,0.02);
+}
+
+.agent-header {
+  height: 44px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.agent-title {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.run-id {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-3);
+}
+
+.timeline {
+  flex: 1; overflow-y: auto;
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.timeline::-webkit-scrollbar { width: 3px; }
+.timeline::-webkit-scrollbar-track { background: transparent; }
+.timeline::-webkit-scrollbar-thumb { background: var(--text-4); border-radius: 2px; }
+
+/* Empty agent state */
+.agent-empty {
+  height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px; opacity: 0.35;
+}
+.agent-empty-glyph { font-size: 28px; }
+.agent-empty p {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-3); text-align: center; line-height: 1.8;
+  letter-spacing: 0.05em;
+}
+
+/* ── EVENTS ──────────────────────────────────────────────── */
+.ev {
+  border-radius: var(--r-sm); overflow: hidden;
+  animation: ev-in 0.22s cubic-bezier(0.16,1,0.3,1) forwards;
+  opacity: 0; transform: translateX(-5px);
+}
+@keyframes ev-in { to { opacity:1; transform:translateX(0); } }
+
+/* Agent handoff */
+.ev-agent {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  margin: 8px 0 1px;
+}
+.ev-agent .inner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+}
+
+.badge {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 100px;
+  letter-spacing: 0.04em; flex-shrink: 0;
+}
+.badge.orchestrator { background:var(--amber-dim);  color:var(--amber);   border:1px solid var(--amber-border);   }
+.badge.researcher   { background:var(--sky-dim);     color:var(--sky);     border:1px solid var(--sky-border);     }
+.badge.analyst      { background:var(--violet-dim);  color:var(--violet);  border:1px solid var(--violet-border);  }
+.badge.synthesizer  { background:var(--emerald-dim); color:var(--emerald); border:1px solid var(--emerald-border); }
+.badge.coder        { background:var(--rose-dim);    color:var(--rose);    border:1px solid var(--rose-border);    }
+.badge.reviewer     { background:var(--violet-dim);  color:var(--violet);  border:1px solid var(--violet-border);  }
+.badge.validator    { background:var(--sky-dim);     color:var(--sky);     border:1px solid var(--sky-border);     }
+
+.ev-agent-text {
+  font-size: 12px; color: var(--text-2); font-weight: 300;
+}
+
+/* Thinking */
+.ev-think {
+  border-left: 2px solid var(--violet-border);
+  margin-left: 14px;
+}
+.ev-think .inner {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 6px 12px;
+}
+.think-icon { font-size: 10px; flex-shrink: 0; color: var(--text-3); margin-top: 2px; }
+.think-text {
+  font-family: var(--font-mono); font-size: 11px; font-style: italic;
+  color: var(--text-3); line-height: 1.7;
+}
+
+/* Tool call */
+.ev-tool {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  margin-left: 14px;
+}
+.ev-tool .inner {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 9px 12px;
+}
+.tool-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.tool-badge {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--sky-dim); color: var(--sky);
+  border: 1px solid var(--sky-border);
+  letter-spacing: 0.03em;
+}
+.tool-st {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 10px;
+}
+.tool-st.running { color: var(--amber); animation: pls 1.5s ease-in-out infinite; }
+.tool-st.done    { color: var(--emerald); }
+@keyframes pls { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.tool-arg {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-2);
+  background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+  padding: 5px 8px; border-radius: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Tool result */
+.ev-result {
+  background: var(--emerald-dim);
+  border: 1px solid var(--emerald-border);
+  margin-left: 14px;
+}
+.ev-result .inner {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 7px 12px;
+}
+.result-icon { font-size: 10px; color: var(--emerald); flex-shrink: 0; margin-top:2px; }
+.result-text { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); line-height: 1.6; }
+
+/* Error */
+.ev-error {
+  background: var(--rose-dim);
+  border: 1px solid var(--rose-border);
+  margin-left: 14px;
+}
+.ev-error .inner {
+  display: flex; gap: 8px; padding: 7px 12px;
+}
+.error-icon { color: var(--rose); font-size: 10px; flex-shrink:0; }
+.error-text { font-family: var(--font-mono); font-size: 11px; color: var(--rose); }
+
+/* Done */
+.ev-done {
+  background: rgba(52,211,153,0.06);
+  border: 1px solid var(--emerald-border);
+  margin-top: 10px;
+}
+.ev-done .inner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+}
+.done-icon { font-size: 11px; color: var(--emerald); }
+.done-label { font-family: var(--font-mono); font-size: 11px; color: var(--emerald); }
+.done-time  { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+
+/* ── MARKDOWN ────────────────────────────────────────────── */
+.msg-content pre {
+  background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08);
+  padding: 10px 12px; border-radius: 6px;
+  overflow-x: auto; margin: 8px 0;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
+  white-space: pre;
+}
+.msg-content strong { font-weight: 500; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="logo">
+      <div class="logo-mark">A</div>
+      AGNT
+    </div>
+    <div class="header-mid">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="demoBtn" onclick="setMode('demo')">demo</button>
+        <button class="mode-btn live"   id="liveBtn" onclick="setMode('live')">live</button>
+      </div>
+      <div class="status-pip" id="pip"></div>
+      <span class="status-label" id="statusLabel">offline</span>
+    </div>
+    <button class="btn-ghost" onclick="clearAll()">Clear</button>
+  </header>
+
+  <div class="main">
+
+    <div class="chat-pane">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">◆</div>
+          <h2>Agent Chat</h2>
+          <p>Ask anything and watch a live pipeline of agents work in real time.</p>
+          <div class="chips">
+            <div class="chip" onclick="chip(this)">How does quantum computing work?</div>
+            <div class="chip" onclick="chip(this)">Analyze React vs Svelte for a new project</div>
+            <div class="chip" onclick="chip(this)">Write a Python function to parse JSON</div>
+            <div class="chip" onclick="chip(this)">What are the pros and cons of microservices?</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="inp" placeholder="Ask something…" rows="1"
+            onkeydown="hotkey(event)" oninput="grow(this)"></textarea>
+          <button class="send" id="sendBtn" onclick="send()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2L2 8l4.5 2L10 5l-3.5 5 3.5 4L14 2z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-hint">↵ send &nbsp;·&nbsp; shift+↵ newline</div>
+      </div>
+    </div>
+
+    <div class="agent-pane">
+      <div class="agent-header">
+        <span class="agent-title">Agent Activity</span>
+        <span class="run-id" id="runId">—</span>
+      </div>
+      <div class="timeline" id="timeline">
+        <div class="agent-empty" id="agentEmpty">
+          <div class="agent-empty-glyph">⬡</div>
+          <p>agents will appear<br>when active</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────
+const BACKEND_URL = 'http://localhost:8000';
+
+// ── Globals ───────────────────────────────────────────────
+let busy = false;
+let liveMode = false;
+
+function setMode(mode) {
+  liveMode = mode === 'live';
+  document.getElementById('demoBtn').classList.toggle('active', !liveMode);
+  document.getElementById('liveBtn').classList.toggle('active',  liveMode);
+  checkHealth();
+}
+
+async function checkHealth() {
+  const pip   = document.getElementById('pip');
+  const label = document.getElementById('statusLabel');
+  if (!liveMode) {
+    pip.style.background = 'var(--text-3)';
+    label.textContent = 'offline';
+    return;
+  }
+  try {
+    const r = await fetch(`${BACKEND_URL}/health`, {signal: AbortSignal.timeout(3000)});
+    const j = await r.json();
+    pip.style.background = 'var(--emerald)';
+    label.textContent = j.mode ?? 'live';
+  } catch {
+    pip.style.background = 'var(--rose)';
+    label.textContent = 'unreachable';
+  }
+}
+
+// ── Scenarios ─────────────────────────────────────────────
+const S = {
+  research: {
+    detect: /\b(how|what|why|explain|tell me|describe|understand|does|mean|work|learn)\b/i,
+    steps: [
+      { t:'agent', name:'orchestrator', msg:'Routing to research pipeline…',         ms:380  },
+      { t:'think', text:'Query requires factual retrieval. Dispatching web search then synthesising findings.', ms:750 },
+      { t:'tool',  tool:'web_search',   useQuery:true,                               ms:480  },
+      { t:'result',tool:'web_search',   msg:'Retrieved 7 sources. Extracting passages from top results.', ms:1300 },
+      { t:'agent', name:'researcher',   msg:'Ranking sources and extracting key claims…', ms:850 },
+      { t:'think', text:'Top 4 sources agree on core mechanisms. One outlier — will flag as contested.', ms:1050 },
+      { t:'tool',  tool:'extract_content', input:'primary-source.example/article',   ms:450  },
+      { t:'result',tool:'extract_content', msg:'Extracted 1,180 tokens. Confidence: high.', ms:950 },
+      { t:'agent', name:'synthesizer',  msg:'Composing final response…',             ms:600  },
+    ],
+    reply: `Based on my research across several sources, here's a clear breakdown:\n\n**Core mechanism**\nAt its heart, the system decomposes the problem space into discrete units — each handled by a specialised process operating in parallel or in sequence, depending on dependencies.\n\n**Why it matters**\nThis design dramatically improves throughput and failure isolation. When one unit fails, the rest continue unaffected, and recovery is localised rather than systemic.\n\n**Real-world picture**\nMature implementations appear across finance (real-time risk), infrastructure (distributed consensus), and AI (multi-agent pipelines). The most critical design decision is usually the tradeoff between **consistency** and **availability** under partition — often called the CAP theorem.\n\n**Current frontier**\nActive research is focused on reducing coordination overhead and making these systems more observable. That second part is actually what tooling like this is built to address.\n\nIs there a specific layer — architecture, implementation, or theory — you'd like to go deeper on?`,
+  },
+
+  analysis: {
+    detect: /\b(analyz|compar|evaluat|assess|pros|cons|tradeoff|versus|vs\.?|difference|better|worse|choose)\b/i,
+    steps: [
+      { t:'agent', name:'orchestrator', msg:'Dispatching comparative analysis pipeline…', ms:360 },
+      { t:'think', text:'Structured comparison task. Will build an evaluation matrix across key dimensions before synthesising.', ms:820 },
+      { t:'agent', name:'analyst',      msg:'Building evaluation framework across 7 dimensions…', ms:700 },
+      { t:'tool',  tool:'structured_eval', input:'performance, dx, ecosystem, scalability, maturity', ms:480 },
+      { t:'result',tool:'structured_eval', msg:'Matrix complete. Clear winner on 3 dimensions, contested on 4.', ms:1100 },
+      { t:'think', text:'Neither option dominates outright. Context of use — team size, existing stack, scaling needs — determines the right call.', ms:1200 },
+      { t:'agent', name:'validator',    msg:'Cross-checking claims against benchmark data…', ms:800 },
+      { t:'agent', name:'synthesizer',  msg:'Formatting recommendation with caveats…', ms:550 },
+    ],
+    reply: `Here's a structured comparison:\n\n**Performance**\nOption A edges ahead in raw throughput under sustained load. Option B recovers faster from spikes due to its back-pressure model — so at p99 latency, B often wins.\n\n**Developer Experience**\nOption B is the clear winner: faster onboarding, excellent tooling, more intuitive abstractions. Option A has a steeper learning curve but rewards you with fine-grained control at depth.\n\n**Ecosystem & Longevity**\nOption A has a larger, more mature ecosystem and a longer production track record. Option B is growing faster and has stronger momentum in greenfield projects started in the last 2 years.\n\n**Scalability**\nBoth scale well. Option A has more reference architectures for extreme scale (>10k rps). Option B handles moderate scale with less operational complexity.\n\n---\n\n**Recommendation:**\n- Building something new, fast iteration matters, team is small → **Option B**\n- Integrating with existing infrastructure, need deep ecosystem, extreme scale → **Option A**\n\nWhat does your current setup look like? That'll sharpen this.`,
+  },
+
+  code: {
+    detect: /\b(code|write|build|create|implement|function|script|program|class|method|python|javascript|typescript|sql|api)\b/i,
+    steps: [
+      { t:'agent', name:'orchestrator', msg:'Routing to code generation pipeline…',   ms:350 },
+      { t:'think', text:'Code task. Plan: clarify requirements → generate typed implementation → review for edge cases → add usage example.', ms:750 },
+      { t:'agent', name:'coder',        msg:'Analysing requirements and generating implementation…', ms:900 },
+      { t:'tool',  tool:'code_sandbox', input:'validate_runtime: python@3.11',        ms:460 },
+      { t:'result',tool:'code_sandbox', msg:'Runtime validated. Type annotations and modern syntax available.', ms:800 },
+      { t:'think', text:'Will use typed signatures, one guard clause for empty input, no over-engineering. Two variants: safe (returns None) and strict (raises).', ms:1100 },
+      { t:'agent', name:'reviewer',     msg:'Checking correctness, edge cases, and idiomatic style…', ms:850 },
+      { t:'think', text:'Edge case: empty / whitespace-only input not handled. Adding guard. Otherwise clean.', ms:780 },
+      { t:'agent', name:'synthesizer',  msg:'Adding usage examples and final polish…', ms:500 },
+    ],
+    reply: `Here's a clean, typed implementation:\n\n\`\`\`python\nfrom __future__ import annotations\nfrom typing import Any\nimport json\n\n\ndef parse_json_safe(raw: str) -> dict[str, Any] | None:\n    \"\"\"Parse JSON, returning None on any failure.\"\"\"\n    if not raw or not raw.strip():\n        return None\n    try:\n        return json.loads(raw)\n    except json.JSONDecodeError:\n        return None\n\n\ndef parse_json_strict(raw: str) -> dict[str, Any]:\n    \"\"\"Parse JSON, raising ValueError with a clean message on failure.\"\"\"\n    if not raw or not raw.strip():\n        raise ValueError(\"Input is empty or whitespace\")\n    try:\n        return json.loads(raw)\n    except json.JSONDecodeError as exc:\n        raise ValueError(\n            f\"Invalid JSON at position {exc.pos}: {exc.msg}\"\n        ) from exc\n\`\`\`\n\n**Usage**\n\`\`\`python\nparse_json_safe('{\"key\": \"val\"}')  # → {'key': 'val'}\nparse_json_safe('bad input')        # → None  (no exception)\nparse_json_safe('')                 # → None\n\nparse_json_strict('{\"ok\": true}')  # → {'ok': True}\nparse_json_strict('bad input')     # → ValueError: Invalid JSON at position 0\n\`\`\`\n\n**\`_safe\`** — use when bad input is expected and you handle it in the call site. **\`_strict\`** — use when bad input is a programming error that should surface loudly.\n\nNeed me to add nested key extraction, list support, or a streaming variant?`,
+  },
+
+  general: {
+    detect: null,
+    steps: [
+      { t:'agent', name:'orchestrator', msg:'Processing request…',              ms:400 },
+      { t:'think', text:'General query. Handling with contextual reasoning — no specialised tool needed.', ms:800 },
+      { t:'agent', name:'analyst',      msg:'Reasoning through the question…', ms:700 },
+      { t:'think', text:'Good coverage possible from base knowledge. Will surface key nuances and flag any uncertainty.', ms:950 },
+      { t:'agent', name:'synthesizer',  msg:'Composing response…',             ms:500 },
+    ],
+    reply: `Here's how I'd think about this:\n\nThe key insight is that the underlying principle generalises well. Once you understand the core mechanism, many edge cases become intuitive rather than surprising.\n\nThe most important contextual factor is *where* this applies. In controlled or well-specified settings, the theoretical model holds closely. In production, you'll want to account for variability, partial failures, and the fact that real users will do things you didn't anticipate.\n\n**Practical takeaway:** start with the simplest version that could possibly work, observe where it breaks, then add complexity only where the data says you need it. This avoids both under-engineering (fragile under load) and over-engineering (expensive to change).\n\nWould you like a concrete example, or is there a specific dimension — performance, architecture, or implementation — you're most focused on?`,
+  },
+};
+
+function scenarioFor(q) {
+  for (const key of ['research','analysis','code']) {
+    if (S[key].detect.test(q)) return S[key];
+  }
+  return S.general;
+}
+
+// ── Utilities ─────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+let runSerial = 0;
+
+function grow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function hotkey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function chip(el) {
+  const i = document.getElementById('inp');
+  i.value = el.textContent;
+  grow(i);
+  send();
+}
+
+// ── Markdown ──────────────────────────────────────────────
+function md(text) {
+  const blocks = [];
+  let out = esc(text);
+
+  // fenced code blocks
+  out = out.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    const i = blocks.length;
+    blocks.push(`<pre>${code.trim()}</pre>`);
+    return `\x00B${i}\x00`;
+  });
+
+  // inline code
+  out = out.replace(/`([^`\n]+)`/g, (_, c) =>
+    `<code style="font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;">${c}</code>`);
+
+  // bold
+  out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+
+  // headings (##)
+  out = out.replace(/^##\s+(.+)$/gm, '<strong style="font-size:15px;display:block;margin-top:6px;">$1</strong>');
+
+  // horizontal rule
+  out = out.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">');
+
+  // newlines
+  out = out.replace(/\n/g, '<br>');
+
+  // restore blocks
+  out = out.replace(/\x00B(\d+)\x00/g, (_, i) => blocks[+i]);
+  return out;
+}
+
+// ── Chat helpers ──────────────────────────────────────────
+function scrollChat() { requestAnimationFrame(() => { const m = document.getElementById('messages'); m.scrollTop = m.scrollHeight; }); }
+function scrollAgent() { requestAnimationFrame(() => { const t = document.getElementById('timeline'); t.scrollTop = t.scrollHeight; }); }
+
+function addMsg(role, html) {
+  const w = document.getElementById('welcome');
+  if (w) w.remove();
+  const wrap = document.createElement('div');
+  wrap.className = `message ${role}`;
+  const glyph = role === 'user' ? 'U' : '◆';
+  const label = role === 'user' ? 'you' : 'assistant';
+  wrap.innerHTML = `
+    <div class="avatar">${glyph}</div>
+    <div class="msg-body">
+      <div class="msg-role">${label}</div>
+      <div class="msg-content">${html}</div>
+    </div>`;
+  document.getElementById('messages').appendChild(wrap);
+  scrollChat();
+  return wrap.querySelector('.msg-content');
+}
+
+function showTyping() {
+  const d = document.createElement('div');
+  d.className = 'typing'; d.id = 'typing';
+  d.innerHTML = `<div class="avatar" style="background:var(--amber-dim);border:1px solid var(--amber-border);color:var(--amber);">◆</div>
+    <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  document.getElementById('messages').appendChild(d);
+  scrollChat();
+}
+
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+async function streamReply(el, text) {
+  let out = '';
+  for (const ch of text) {
+    out += ch;
+    el.innerHTML = md(out) + '<span class="cur"></span>';
+    scrollChat();
+    await sleep(9);
+  }
+  el.innerHTML = md(text);
+}
+
+// ── Timeline helpers ──────────────────────────────────────
+function clearTimeline() {
+  document.getElementById('timeline').innerHTML = '';
+}
+
+function pushEv(html) {
+  const tl = document.getElementById('timeline');
+  const ae = document.getElementById('agentEmpty');
+  if (ae) ae.remove();
+  tl.insertAdjacentHTML('beforeend', html);
+  scrollAgent();
+}
+
+async function streamThink(text) {
+  const id = 'th' + Date.now();
+  pushEv(`<div class="ev ev-think"><div class="inner"><span class="think-icon">◈</span><span class="think-text" id="${id}"></span></div></div>`);
+  const el = document.getElementById(id);
+  for (const ch of text) {
+    el.textContent += ch;
+    scrollAgent();
+    await sleep(16);
+  }
+}
+
+function addAgentEv(name, msg) {
+  pushEv(`<div class="ev ev-agent"><div class="inner"><span class="badge ${name}">${name}</span><span class="ev-agent-text">${esc(msg)}</span></div></div>`);
+}
+
+function addToolCall(tool, input) {
+  const id = 'tc' + Date.now();
+  pushEv(`<div class="ev ev-tool" id="${id}"><div class="inner">
+    <div class="tool-row">
+      <span class="tool-badge">${esc(tool)}</span>
+      <span class="tool-st running" id="st${id}">● running</span>
+    </div>
+    <div class="tool-arg">${esc(input)}</div>
+  </div></div>`);
+  return id;
+}
+
+function markToolDone(id) {
+  const s = document.getElementById('st' + id);
+  if (s) { s.className = 'tool-st done'; s.textContent = '✓ done'; }
+}
+
+function addToolResult(msg) {
+  pushEv(`<div class="ev ev-result"><div class="inner"><span class="result-icon">✓</span><span class="result-text">${esc(msg)}</span></div></div>`);
+}
+
+function addDoneEv(elapsed) {
+  pushEv(`<div class="ev ev-done"><div class="inner"><span class="done-icon">◆</span><span class="done-label">run complete</span><span class="done-time">${elapsed}s</span></div></div>`);
+}
+
+// ── Run scenario ──────────────────────────────────────────
+async function runScenario(query, scenario) {
+  let lastToolId = null;
+
+  for (const step of scenario.steps) {
+    await sleep(step.ms);
+
+    if (step.t === 'agent') {
+      addAgentEv(step.name, step.msg);
+    }
+    else if (step.t === 'think') {
+      await streamThink(step.text);
+    }
+    else if (step.t === 'tool') {
+      const arg = step.useQuery
+        ? (query.length > 52 ? query.slice(0,52) + '…' : query)
+        : (step.input || '');
+      lastToolId = addToolCall(step.tool, arg);
+    }
+    else if (step.t === 'result') {
+      if (lastToolId) markToolDone(lastToolId);
+      addToolResult(step.msg);
+    }
+  }
+}
+
+// ── Main send ─────────────────────────────────────────────
+async function send() {
+  if (busy) return;
+  const inp = document.getElementById('inp');
+  const q = inp.value.trim();
+  if (!q) return;
+
+  busy = true;
+  inp.value = '';
+  inp.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  addMsg('user', esc(q));
+
+  runSerial++;
+  document.getElementById('runId').textContent = 'run_' + Math.random().toString(36).slice(2,9);
+  clearTimeline();
+  showTyping();
+
+  const t0 = Date.now();
+  if (liveMode) {
+    await sendLive(q, t0);
+  } else {
+    await sendDemo(q, t0);
+  }
+
+  busy = false;
+  document.getElementById('sendBtn').disabled = false;
+  inp.focus();
+}
+
+async function sendDemo(q, t0) {
+  const scenario = scenarioFor(q);
+  await runScenario(q, scenario);
+  hideTyping();
+  const replyEl = addMsg('assistant');
+  await streamReply(replyEl, scenario.reply);
+  await sleep(300);
+  addDoneEv(((Date.now() - t0) / 1000).toFixed(1));
+}
+
+async function sendLive(q, t0) {
+  const state = { replyEl: null, replyText: '', lastToolId: null };
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: q }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    outer: while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const ev = JSON.parse(line.slice(6));
+        if (await handleLiveEvent(ev, state, t0)) break outer;
+      }
+    }
+  } catch (err) {
+    hideTyping();
+    if (!state.replyEl) state.replyEl = addMsg('assistant');
+    state.replyEl.innerHTML =
+      `<span style="color:var(--rose)">Connection error: ${esc(String(err))}</span><br>` +
+      `<span style="font-size:12px;color:var(--text-3)">Is the backend running at ${BACKEND_URL}?</span>`;
+  }
+}
+
+async function handleLiveEvent(ev, state, t0) {
+  if (ev.type === 'agent') {
+    addAgentEv(ev.name, ev.content);
+  } else if (ev.type === 'thinking') {
+    await streamThink(ev.content);
+  } else if (ev.type === 'tool_call') {
+    state.lastToolId = addToolCall(ev.tool, ev.input || '');
+  } else if (ev.type === 'tool_result') {
+    if (state.lastToolId) markToolDone(state.lastToolId);
+    addToolResult(ev.content);
+  } else if (ev.type === 'text_delta') {
+    if (!state.replyEl) { hideTyping(); state.replyEl = addMsg('assistant'); }
+    state.replyText += ev.content;
+    state.replyEl.innerHTML = md(state.replyText) + '<span class="cur"></span>';
+    scrollChat();
+  } else if (ev.type === 'done') {
+    if (state.replyEl) state.replyEl.innerHTML = md(state.replyText);
+    addDoneEv(((Date.now() - t0) / 1000).toFixed(1));
+    return true;
+  } else if (ev.type === 'error') {
+    hideTyping();
+    if (!state.replyEl) state.replyEl = addMsg('assistant');
+    state.replyEl.innerHTML = `<span style="color:var(--rose)">Error: ${esc(ev.message)}</span>`;
+    return true;
+  }
+  return false;
+}
+
+// ── Clear ─────────────────────────────────────────────────
+function clearAll() {
+  if (busy) return;
+  document.getElementById('messages').innerHTML = `
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">◆</div>
+      <h2>Agent Chat</h2>
+      <p>Ask anything and watch a live pipeline of agents work in real time.</p>
+      <div class="chips">
+        <div class="chip" onclick="chip(this)">How does quantum computing work?</div>
+        <div class="chip" onclick="chip(this)">Analyze React vs Svelte for a new project</div>
+        <div class="chip" onclick="chip(this)">Write a Python function to parse JSON</div>
+        <div class="chip" onclick="chip(this)">What are the pros and cons of microservices?</div>
+      </div>
+    </div>`;
+  document.getElementById('timeline').innerHTML = `
+    <div class="agent-empty" id="agentEmpty">
+      <div class="agent-empty-glyph">⬡</div>
+      <p>agents will appear<br>when active</p>
+    </div>`;
+  document.getElementById('runId').textContent = '—';
+}
+
+// ── Boot ──────────────────────────────────────────────────
+document.getElementById('inp').focus();
+</script>
+</body>
+</html>
